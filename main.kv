@@ -1,0 +1,89 @@
+<MainScreens>:
+    id:main_screens
+<LoginScreen>
+    
+    name:"login"
+    MDCard:
+        size_hint:(.97,.58)
+        radius:(10,10,10,10)
+        elevation:10
+        padding:(20,0,20,160)
+        pos_hint:{'center_x':0.5, 'top':1}
+        orientation:"vertical"
+        MDLabel:
+            text:"Unlock"
+            font_style:"H2"
+            halign:"center"
+        MDTextField:
+            id:p_log
+            halign:"center"
+        MDRaisedButton:
+            pos_hint:{'center_x':0.5}
+            text:"Unlock"
+            font_style:"Button"
+            on_release:root.parent.login_in_user()
+
+<RegisterScreen>
+    name:"register"
+    MDCard:
+        size_hint:(.97,.6)
+        radius:(10,10,10,10)
+        elevation:10
+        pos_hint:{'center_x':0.5, 'top':1}
+        padding:(10,0,10,60)
+        MDBoxLayout:
+            orientation:"vertical"
+            MDLabel:
+                text:"Account"
+                font_style:"H2"
+                halign:"center"
+            MDTextField:
+                id:pas1
+                hint_text:"Create password"
+            MDTextField:
+                id:pas2
+                hint_text:"Confirm password" 
+            MDLabel:
+                id:register_error
+                halign:"center"
+                size_hint_y:.145
+                theme_text_color:"Custom"
+                text_color:33,33,33,1
+            MDRaisedButton:
+                text:"register"
+                on_release:root.parent.register_user()
+                pos_hint:{'center_x':0.5}
+           
+
+<PasswordScreen>
+    name:"main"
+    MDBoxLayout:
+        orientation:"vertical"
+        MDCard:
+            id:top_card
+            padding:(5,5,0,0)
+            radius:(0,0,10,10)
+            size_hint_y:.14
+            MDTextField:
+                hint_text:"Search"
+                id:search_field_id
+                on_text:root.parent.search_data()
+            MDIconButton:
+                id:toggle_b
+                text:"toggle"
+                icon:"toggle-switch-outline"
+                on_release:app.save_stuff()
+        MDScrollViewRefreshLayout:
+            id: refresh_layout
+            refresh_callback:lambda :root.parent.refresh_callback()
+            root_layout: root
+            MDList:
+                id:p_list
+    MDFloatingActionButton:
+        id:float_button
+        icon:"plus"
+        y:20
+        pos_hint:{"right":.98, "top":.12}
+        on_release:root.parent.show_write_dialog()
+
+        
