@@ -64,6 +64,7 @@
             padding:(5,5,0,0)
             radius:(0,0,10,10)
             size_hint_y:.14
+            
             MDTextField:
                 hint_text:"Search"
                 id:search_field_id
@@ -71,12 +72,10 @@
             MDIconButton:
                 id:toggle_b
                 text:"toggle"
+                
                 icon:"toggle-switch-outline"
                 on_release:app.save_stuff()
-        MDScrollViewRefreshLayout:
-            id: refresh_layout
-            refresh_callback:lambda :root.parent.refresh_callback()
-            root_layout: root
+        ScrollView:
             MDList:
                 id:p_list
     MDFloatingActionButton:

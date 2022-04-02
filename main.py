@@ -2,9 +2,9 @@ from kivymd.app import MDApp
 from kivymd.uix.label import MDLabel
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivymd.uix.list import TwoLineListItem, OneLineAvatarListItem
-from kivymd.uix.card import MDCard
+from kivymd.uix.card import MDCard, MDCardSwipe
 from kivymd.uix.label import MDLabel
-from kivymd.uix.bottomsheet import MDListBottomSheet
+from kivymd.uix.bottomsheet import MDListBottomSheet, MDGridBottomSheet
 from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
 from kivy.clock import Clock
@@ -18,13 +18,15 @@ from kivymd.toast import toast
 import threading
 import json
 from os.path import exists
-from manager import all_website, create_table, delete_website, register_password, search_website, update_password_entry
 
+from manager import all_website, create_table, delete_website, register_password, search_website, update_password_entry
+from utils import write_cache, read_cache, update_cache, search_data
 
 text = None
 secondary_text = None
 data_id = None
 current_widget = None
+cache_data = None
 
 
 class LoginScreen(Screen):
@@ -41,6 +43,10 @@ class RegisterScreen(Screen):
 
 class ItemConfirm(OneLineAvatarListItem):
     ""
+
+
+# class SwipeToDeleteItem(MDCardSwipe):
+#     content = PasswordItem()
 
 
 class PasswordItem(TwoLineListItem):
@@ -105,6 +111,7 @@ class MainScreens(ScreenManager):
             self.add_widget(self.register_screen)
             self.current = 'register'
             create_table()
+            register_password('Hi There', 'delete this later')
 
     def create_login_screen(self):
         self.login_screen = LoginScreen()
@@ -122,6 +129,7 @@ class MainScreens(ScreenManager):
             self.add_widget(self.password_screen)
             self.current = 'main'
             self.remove_widget(self.login_screen)
+
             # get the password widget from password screen
             Clock.schedule_once(self.wait_and_load, 1)
             # thread = threading.Thread(
@@ -140,7 +148,15 @@ class MainScreens(ScreenManager):
 
     async def load_datas(self):
         self.p_widget = self.password_screen.ids.p_list
-        saved_data = all_website()
+
+        if exists('cache_data.json'):
+            saved_data = read_cache()
+            global cache_data
+            cache_data = read_cache(fmt=False)
+
+        else:
+            saved_data = all_website()
+            write_cache(saved_data)
         for data in saved_data:
             await asynckivy.sleep(0)
             self.create_p_item(data)
@@ -156,9 +172,11 @@ class MainScreens(ScreenManager):
                 if len(password_value) < 5:
                     erro_widget = self.register_screen.ids.register_error
                     erro_widget.text = "password must be greater than 5"
+
                     return
                 json.dump({'user-pass': password_value},
                           open('.user_conf.json', 'w'))
+
                 self.create_login_screen()
                 self.remove_widget(self.register_screen)
             else:
@@ -173,13 +191,19 @@ class MainScreens(ScreenManager):
     def add_b_sheet(self):
         bs = MDListBottomSheet()
         bs.radius_from = "top"
+        bs.radius = 80
+        bs.animation = True
+        bs.duration_opening = .01
         data = {
+            text: "panorama-fisheye",
             'Copy': 'content-copy',
             'Delete': 'delete-outline',
             'Edit': 'circle-edit-outline'
         }
         for item in data.items():
-            bs.add_item(item[0], callback=lambda x, y=item[1]: self.callbacks(y), icon=item[1])
+
+            bs.add_item(item[0], callback=lambda x, y=item[1]
+                        : self.callbacks(y), icon=item[1])
         bs.open()
 
     def show_del_dialog(self):
@@ -220,9 +244,12 @@ class MainScreens(ScreenManager):
 
         if edit_values:
             self.update_entry(web_text, paswrd_text, data_id)
+            update_cache(id=data_id, data=[web_text, paswrd_text, data_id])
             return
         if web_text and paswrd_text:
             saved = register_password(web_text, paswrd_text)
+            update_cache(datas=saved)
+
             if saved:
                 # enable widgets
                 self.ps_widgets_state(False)
@@ -232,10 +259,10 @@ class MainScreens(ScreenManager):
 
     def ps_widgets_state(self, state):
         # change state of widgets -> diabled or enabled
-        if state:
-            self.password_screen.ids.refresh_layout.disabled = True
-        else:
-            self.password_screen.ids.refresh_layout.disabled = False
+        # if state:
+        #     self.password_screen.ids.refresh_layout.disabled = True
+        # else:
+        #     self.password_screen.ids.refresh_layout.disabled = False
 
         for awidget in self.password_screen.ids.top_card.children:
             awidget.disabled = state
@@ -250,7 +277,10 @@ class MainScreens(ScreenManager):
         # delete the entry with the current data id
         # and remove the current widget clicked from the p_widget
         delete_website(data_id)
+        data = all_website()
+        write_cache(data)
         self.p_widget.remove_widget(current_widget)
+
         self.bar(f'Entry for {text} deleted')
         self.dismiss_dialogs()
 
@@ -275,29 +305,25 @@ class MainScreens(ScreenManager):
         self.bar(f'Entry for {title_text} updated')
 
     def search_data(self):
+        if not cache_data:
+            return
         q = self.password_screen.ids.search_field_id.text
-        if q == '':
-            self.continue_searching = True
-        if self.continue_searching:
-            returned_search = search_website(q)
-            if returned_search:
-                self.p_widget.clear_widgets()
-                for w in returned_search:
-                    self.create_p_item(w)
-            else:
-                if not self.continue_searching:
-                    self.continue_searching = False
+        returned_search = search_data(q, datas=cache_data)
+        if returned_search:
+            self.p_widget.clear_widgets()
+            for w in returned_search:
+                self.create_p_item(w)
 
-    def refresh_callback(self, *args):
-        '''A method that updates the state of your application
-        while the spinner remains on the screen.'''
-        self.p_widget.clear_widgets()
+    # def refresh_callback(self, *args):
+    #     '''A method that updates the state of your application
+    #     while the spinner remains on the screen.'''
+    #     self.p_widget.clear_widgets()
 
-        def refresh_callback(interval):
-            self.wait_and_load()
-            self.password_screen.ids.refresh_layout.refresh_done()
-            self.tick = 0
-        Clock.schedule_once(refresh_callback, 1)
+    #     def refresh_callback(interval):
+    #         self.wait_and_load()
+    #         self.password_screen.ids.refresh_layout.refresh_done()
+    #         self.tick = 0
+    #     Clock.schedule_once(refresh_callback, 1)
 
     def bar(self, text):
         snackbar = Snackbar(
@@ -315,22 +341,37 @@ class MainApp(MDApp):
             self.theme_cls.theme_style = 'Dark'
         else:
             self.theme_cls.theme_style = 'Light'
+        self.change_palatte()
 
     def save_bg(self, what):
         with open('.datas.txt', 'w') as conf_file:
             conf_file.write(what)
 
     def on_start(self):
-        self.theme_cls.primary_palette = 'Teal'
+
         if not exists('.datas.txt'):
+
             self.theme_cls.theme_style = 'Light'
+            # self.theme_cls.primary_hue = '800'
             self.app_style = 'Light'
         else:
             _file = open('.datas.txt')
             st = _file.readline()
+
             st = st.strip()
             _file.close()
             self.theme_cls.theme_style = st
+
+        self.change_palatte()
+
+    def change_palatte(self):
+        if self.theme_cls.theme_style == 'Light':
+            self.theme_cls.primary_palette = 'Teal'
+        else:
+            self.theme_cls.primary_palette = 'Amber'
+
+    def on_pause(self):
+        self.save_bg(self.theme_cls.theme_style)
 
     def on_stop(self):
         self.save_bg(self.theme_cls.theme_style)
