@@ -4,13 +4,13 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivymd.uix.list import TwoLineListItem, OneLineAvatarListItem
 from kivymd.uix.card import MDCard, MDCardSwipe
 from kivymd.uix.label import MDLabel
-from kivymd.uix.bottomsheet import MDListBottomSheet, MDGridBottomSheet
+from kivymd.uix.bottomsheet import MDCustomBottomSheet
 from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
 from kivy.clock import Clock
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
-from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.boxlayout import MDBoxLayout, BoxLayout
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.snackbar import Snackbar
 from kivymd.utils import asynckivy
@@ -45,8 +45,8 @@ class ItemConfirm(OneLineAvatarListItem):
     ""
 
 
-# class SwipeToDeleteItem(MDCardSwipe):
-#     content = PasswordItem()
+class ContentBS(BoxLayout):
+    ""
 
 
 class PasswordItem(TwoLineListItem):
@@ -62,7 +62,7 @@ class PasswordItem(TwoLineListItem):
     def on_release(self):
         global text, secondary_text, data_id, current_widget
         text, secondary_text, data_id, current_widget = self.text, self.secondary_text, self.data_id, self
-        app.main_screen.add_b_sheet()
+        app.bottomsheet()
 
 
 class RegDialog(MDCard):
@@ -202,8 +202,7 @@ class MainScreens(ScreenManager):
         }
         for item in data.items():
 
-            bs.add_item(item[0], callback=lambda x, y=item[1]
-                        : self.callbacks(y), icon=item[1])
+            bs.add_item(item[0], callback=lambda x, y=item[1]                        : self.callbacks(y), icon=item[1])
         bs.open()
 
     def show_del_dialog(self):
@@ -336,6 +335,20 @@ class MainScreens(ScreenManager):
 
 
 class MainApp(MDApp):
+    custom_sheet = None
+
+    def bottomsheet(self):
+        self.custom_sheet = MDCustomBottomSheet(screen=ContentBS())
+        self.custom_sheet.duration_opening = .000001
+        self.custom_sheet.duration_closing = .001
+        self.custom_sheet.radius_from = "top"
+        self.custom_sheet.radius = 90
+        self.custom_sheet.open()
+
+    def dismiss_sheet(self, icon):
+        self.main_screen.callbacks(icon)
+        self.custom_sheet.dismiss()
+
     def save_stuff(self):
         if self.theme_cls.theme_style == 'Light':
             self.theme_cls.theme_style = 'Dark'
@@ -351,9 +364,7 @@ class MainApp(MDApp):
 
         if not exists('.datas.txt'):
 
-            self.theme_cls.theme_style = 'Light'
-            # self.theme_cls.primary_hue = '800'
-            self.app_style = 'Light'
+            self.theme_cls.theme_style = 'Dark'
         else:
             _file = open('.datas.txt')
             st = _file.readline()
@@ -378,6 +389,7 @@ class MainApp(MDApp):
 
     def build(self):
         self.main_screen = MainScreens()
+
         return self.main_screen
 
 

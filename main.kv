@@ -61,8 +61,8 @@
         orientation:"vertical"
         MDCard:
             id:top_card
-            padding:(5,5,0,0)
-            radius:(0,0,10,10)
+            padding:(10,10,0,0)
+            
             size_hint_y:.14
             
             MDTextField:
@@ -85,4 +85,32 @@
         pos_hint:{"right":.98, "top":.12}
         on_release:root.parent.show_write_dialog()
 
+<ItemForBottomSheet@OneLineIconListItem>
+    on_release:app.dismiss_sheet(root.icon)
+    icon:""
+    
+    IconLeftWidget:
+        icon:root.icon
+        md_bg_color:"gray"
+<ContentBS>
+    orientation:"vertical"
+
+    size_hint_y:None
+    height:"400dp"
+   
+    MDGridLayout:
+        cols:1
+        spacing:20
+        padding:25
+       
+        ItemForBottomSheet:
+            icon:"content-copy"
+            text:"Copy"
         
+        ItemForBottomSheet:
+            icon:"circle-edit-outline"
+            text:"Edit"
+        ItemForBottomSheet:
+            icon:"delete-outline"
+            text:"Delete"
+
