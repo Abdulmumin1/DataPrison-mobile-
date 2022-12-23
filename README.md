@@ -1,5 +1,5 @@
 # DataPrison
-A super secure key storage app.
+A super secure key storage mobile app.
 
 <img src='images/genp_image_ultimate.png' align='center'/>
 
